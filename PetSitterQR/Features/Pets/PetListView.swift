@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PetListView: View {
     @StateObject private var viewModel: PetListViewModel
+    @State private var selectedPet: Pet?
 
     @MainActor
     init(viewModel: PetListViewModel) {
@@ -21,28 +22,24 @@ struct PetListView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                switch viewModel.state {
-                case .loading:
-                    ProgressView("Loading pets…")
-                        .tint(Color("BrandPrimary"))
-                        .foregroundStyle(Color("NeutralTextSecondary"))
-                        .padding(.top, 80)
-                case .failed(let message):
-                    EmptyStateView(
-                        title: "Something went wrong",
-                        message: message,
-                        actionTitle: "Retry",
-                        action: { Task { await viewModel.reload() } }
-                    )
+        Group {
+            switch viewModel.state {
+            case .loading:
+                ProgressView("Loading pets…")
+                    .tint(Color("BrandPrimary"))
+                    .foregroundStyle(Color("NeutralTextSecondary"))
                     .padding(.top, 80)
-                default:
-                    contentList
-                }
+            case .failed(let message):
+                EmptyStateView(
+                    title: "Something went wrong",
+                    message: message,
+                    actionTitle: "Retry",
+                    action: { Task { await viewModel.reload() } }
+                )
+                .padding(.top, 80)
+            default:
+                petList
             }
-            .padding(.horizontal)
-            .padding(.top, 24)
         }
         .background(Color("NeutralBackground").ignoresSafeArea())
         .navigationTitle("My Pets")
@@ -65,50 +62,68 @@ struct PetListView: View {
                 )
             }
         }
+        .navigationDestination(item: $selectedPet) { pet in
+            if let detailVM = PetDetailViewModel(petID: pet.id, listViewModel: viewModel) {
+                PetDetailView(viewModel: detailVM)
+            }
+        }
         .task {
             await viewModel.loadPetsIfNeeded()
         }
     }
 
     @ViewBuilder
-    private var contentList: some View {
-                if viewModel.pets.isEmpty {
-                    EmptyStateView(
-                        title: "No pets yet",
-                        message: "Add your first pet to generate a care card and QR code.",
-                        actionTitle: "Add pet",
-                        action: { viewModel.addPetTapped() }
+    private var petList: some View {
+        if viewModel.pets.isEmpty {
+            EmptyStateView(
+                title: "No pets yet",
+                message: "Add your first pet to generate a care card and QR code.",
+                actionTitle: "Add pet",
+                action: { viewModel.addPetTapped() }
             )
             .padding(.top, 80)
         } else {
-            ForEach(viewModel.pets) { pet in
-                if let detailVM = PetDetailViewModel(petID: pet.id, listViewModel: viewModel) {
-                    NavigationLink {
-                        PetDetailView(viewModel: detailVM)
-                    } label: {
-                        PetRowView(
-                            pet: pet,
-                            editAction: { viewModel.edit(pet: pet) }
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            viewModel.delete(pet: pet)
+            List {
+                ForEach(viewModel.pets) { pet in
+                    if let detailVM = PetDetailViewModel(petID: pet.id, listViewModel: viewModel) {
+                        Button {
+                            selectedPet = pet
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            PetRowView(
+                                pet: pet,
+                                showsChevron: false,
+                                editAction: { viewModel.edit(pet: pet) },
+                                deleteAction: { viewModel.delete(pet: pet) }
+                            )
+                            .listRowInsets(EdgeInsets())
                         }
-                        .accessibilityLabel("Delete \(pet.name)")
+                        .buttonStyle(.plain)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color("NeutralBackground"))
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                viewModel.delete(pet: pet)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .tint(Color("BrandDanger"))
+                        }
                     }
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color("NeutralBackground"))
         }
     }
+
 }
 
 private struct PetRowView: View {
     let pet: Pet
+    let showsChevron: Bool
     let editAction: () -> Void
+    let deleteAction: () -> Void
 
     var body: some View {
         GlassCard {
@@ -132,12 +147,20 @@ private struct PetRowView: View {
 
                 Spacer()
 
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(Color("NeutralTextSecondary"))
+                if showsChevron {
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(Color("NeutralTextSecondary"))
+                }
             }
         }
         .contextMenu {
             Button("Edit", systemImage: "pencil", action: editAction)
+            Button(role: .destructive) {
+                deleteAction()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .tint(Color("BrandDanger"))
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(pet.name), \(pet.ageDescription). \(pet.medicationInfo?.hasMeds == true ? "Has medications" : "No medications").")

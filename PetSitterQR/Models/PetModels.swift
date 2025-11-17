@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Pet: Identifiable, Codable, Equatable {
+struct Pet: Identifiable, Codable, Equatable, Hashable {
     let id: UUID
     var name: String
     var ageDescription: String
@@ -35,22 +35,22 @@ struct Pet: Identifiable, Codable, Equatable {
     }
 }
 
-struct FeedingInfo: Codable, Equatable {
+struct FeedingInfo: Codable, Equatable, Hashable {
     var summary: String
     var schedule: String?
 }
 
-struct MedicationInfo: Codable, Equatable {
+struct MedicationInfo: Codable, Equatable, Hashable {
     var hasMeds: Bool
     var description: String?
     var dosage: String?
 }
 
-struct CareNotes: Codable, Equatable {
+struct CareNotes: Codable, Equatable, Hashable {
     var extraNotes: String
 }
 
-struct PetQRCodePayload: Codable, Equatable {
+struct PetQRCodePayload: Codable, Equatable, Hashable {
     var name: String
     var ageDescription: String
     var feedingSummary: String
