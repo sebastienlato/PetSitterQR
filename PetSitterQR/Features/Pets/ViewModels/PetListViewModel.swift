@@ -114,6 +114,36 @@ final class PetListViewModel: ObservableObject {
             state = .failed("Unable to load pets. Please try again.")
         }
     }
+
+    func importFromQRCode(_ payload: PetQRCodePayload) async {
+        let pet = Pet(
+            id: UUID(),
+            name: payload.name,
+            ageDescription: payload.ageDescription,
+            imageIdentifier: nil,
+            feedingInfo: FeedingInfo(
+                summary: payload.feedingSummary,
+                schedule: nil
+            ),
+            medicationInfo: payload.medicationSummary.map { summary in
+                MedicationInfo(
+                    hasMeds: true,
+                    description: summary,
+                    dosage: nil
+                )
+            },
+            careNotes: payload.extraNotes.map { CareNotes(extraNotes: $0) }
+        )
+
+        do {
+            try await storageService.savePet(pet)
+            await refreshPetsFromStore()
+            Haptics.success()
+        } catch {
+            state = .failed("Unable to import pet. Please try again.")
+            Haptics.warning()
+        }
+    }
 }
 
 extension PetListViewModel {

@@ -15,8 +15,14 @@ struct RootView: View {
 
     init(modelContext: ModelContext) {
         let storageService = LocalPetStorageService(context: modelContext)
-        _petListViewModel = StateObject(wrappedValue: PetListViewModel(storageService: storageService))
-        _scannerViewModel = StateObject(wrappedValue: QRScannerViewModel())
+        let listVM = PetListViewModel(storageService: storageService)
+        let scannerVM = QRScannerViewModel()
+        scannerVM.setImportHandler { payload in
+            Task { await listVM.importFromQRCode(payload) }
+        }
+
+        _petListViewModel = StateObject(wrappedValue: listVM)
+        _scannerViewModel = StateObject(wrappedValue: scannerVM)
     }
 
     var body: some View {
@@ -53,10 +59,16 @@ private enum RootTab {
 
 private struct RootViewPreviewWrapper: View {
     @StateObject var listViewModel: PetListViewModel
-    @StateObject var scannerViewModel = QRScannerViewModel()
+    @StateObject var scannerViewModel: QRScannerViewModel
 
     init(storageService: PetStorageServiceProtocol) {
-        _listViewModel = StateObject(wrappedValue: PetListViewModel(storageService: storageService))
+        let listVM = PetListViewModel(storageService: storageService)
+        let scannerVM = QRScannerViewModel()
+        scannerVM.setImportHandler { payload in
+            Task { await listVM.importFromQRCode(payload) }
+        }
+        _listViewModel = StateObject(wrappedValue: listVM)
+        _scannerViewModel = StateObject(wrappedValue: scannerVM)
     }
 
     var body: some View {

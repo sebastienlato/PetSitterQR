@@ -28,11 +28,17 @@ final class QRScannerViewModel: ObservableObject {
     @Published private(set) var scannerAvailability: ScannerAvailability = .checking
     @Published private(set) var state: ScanState = .scanning
     @Published var debugMessage: String?
+    @Published private(set) var hasImportedCurrentPayload = false
 
     private let qrService: QRCodeServiceProtocol
+    private var importHandler: ((PetQRCodePayload) -> Void)?
 
-    init(qrService: QRCodeServiceProtocol? = nil) {
+    init(
+        qrService: QRCodeServiceProtocol? = nil,
+        importHandler: ((PetQRCodePayload) -> Void)? = nil
+    ) {
         self.qrService = qrService ?? DefaultQRCodeService()
+        self.importHandler = importHandler
     }
 
     var decodedPayload: PetQRCodePayload? {
@@ -52,6 +58,7 @@ final class QRScannerViewModel: ObservableObject {
             let payload = try qrService.parsePayload(from: string)
             state = .decoded(payload)
             Haptics.success()
+            hasImportedCurrentPayload = false
         } catch {
             state = .failed("This code is not a valid PetSitterQR card.")
             Haptics.warning()
@@ -61,6 +68,7 @@ final class QRScannerViewModel: ObservableObject {
     func retry() {
         state = .scanning
         debugMessage = nil
+        hasImportedCurrentPayload = false
     }
 
     func handleCameraError() {
@@ -90,6 +98,16 @@ final class QRScannerViewModel: ObservableObject {
         }
 
         scannerAvailability = .ready
+    }
+
+    func importCurrentPayload() {
+        guard case .decoded(let payload) = state, hasImportedCurrentPayload == false else { return }
+        importHandler?(payload)
+        hasImportedCurrentPayload = true
+    }
+
+    func setImportHandler(_ handler: @escaping (PetQRCodePayload) -> Void) {
+        importHandler = handler
     }
 
     private func requestCameraAccessIfNeeded() async -> Bool {

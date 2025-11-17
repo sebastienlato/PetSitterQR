@@ -129,6 +129,13 @@ struct QRScannerView: View {
         case .decoded(let payload):
             VStack(spacing: 16) {
                 CareCardView(payload: payload)
+                PrimaryButton(
+                    title: viewModel.hasImportedCurrentPayload ? "Added to My Pets" : "Add to My Pets"
+                ) {
+                    viewModel.importCurrentPayload()
+                }
+                .disabled(viewModel.hasImportedCurrentPayload)
+
                 PrimaryButton(title: "Scan another code") {
                     viewModel.retry()
                 }
