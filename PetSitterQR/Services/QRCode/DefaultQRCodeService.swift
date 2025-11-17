@@ -29,12 +29,19 @@ struct DefaultQRCodeService: QRCodeServiceProtocol {
         filter.setValue(data, forKey: "inputMessage")
         filter.correctionLevel = "M"
 
-        guard let ciImage = filter.outputImage?
-            .transformed(by: CGAffineTransform(scaleX: 10, y: 10)) else {
+        guard let ciImage = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 12, y: 12)) else {
             throw QRCodeServiceError.encodingFailed
         }
 
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+        let inverted = ciImage
+            .applyingFilter("CIColorInvert")
+            .applyingFilter("CIColorControls", parameters: [
+                kCIInputBrightnessKey: 1.0,
+                kCIInputContrastKey: 1.0
+            ])
+            .applyingFilter("CIColorInvert")
+
+        guard let cgImage = context.createCGImage(inverted, from: inverted.extent) else {
             throw QRCodeServiceError.encodingFailed
         }
 

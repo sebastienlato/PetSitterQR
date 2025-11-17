@@ -5,16 +5,15 @@
 //  Created by Codex on 2025-11-16.
 //
 
+import AVFoundation
 import SwiftUI
-#if canImport(Vision)
-import Vision
-#endif
-#if canImport(VisionKit)
-import VisionKit
-#endif
+import UIKit
 
 struct QRScannerView: View {
     @StateObject private var viewModel: QRScannerViewModel
+    @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var isScannerVisible = false
 
     @MainActor
     init(viewModel: QRScannerViewModel) {
@@ -28,158 +27,313 @@ struct QRScannerView: View {
 
     var body: some View {
         ZStack {
-            scannerContent
+            scannerLayer
             overlayContent
         }
         .background(Color.black.opacity(0.8))
         .navigationTitle("Scan QR")
+        .task {
+            await viewModel.prepareScanner()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await viewModel.prepareScanner() }
+            }
+        }
+        .onAppear {
+            isScannerVisible = true
+        }
+        .onDisappear {
+            isScannerVisible = false
+        }
     }
 
     @ViewBuilder
-    private var scannerContent: some View {
-#if canImport(VisionKit)
-        if #available(iOS 17.0, *) {
-            if DataScannerViewController.isSupported {
-                QRDataScannerView(viewModel: viewModel)
-                    .ignoresSafeArea()
-            } else {
-                unsupportedScanner
-            }
+    private var scannerLayer: some View {
+        if viewModel.scannerAvailability == .ready {
+            QRAVScannerView(
+                viewModel: viewModel,
+                isActive: isScannerVisible
+            )
+            .ignoresSafeArea()
         } else {
-            unsupportedScanner
+            Color("NeutralBackground").ignoresSafeArea()
         }
-#else
-        unsupportedScanner
-#endif
-    }
-
-    private var unsupportedScanner: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "camera.fill")
-                .font(.largeTitle)
-                .foregroundStyle(Color("NeutralTextSecondary"))
-
-            Text("QR scanning is not supported on this device.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Color("NeutralTextSecondary"))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color("NeutralBackground"))
     }
 
     @ViewBuilder
     private var overlayContent: some View {
         VStack {
-            Text(viewModel.instructions)
-                .font(.subheadline)
-                .foregroundStyle(.white)
-                .padding(.top, 24)
-                .padding(.horizontal)
-
-            Spacer()
-
-            switch viewModel.state {
-            case .decoded(let payload):
-                VStack(spacing: 16) {
-                    CareCardView(payload: payload)
-                    PrimaryButton(title: "Scan another code") {
-                        viewModel.retry()
-                    }
-                }
-                .padding()
-                .background(
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(0.6),
-                            Color.black.opacity(0.3)
-                        ],
-                        startPoint: .bottom,
-                        endPoint: .top
+            Group {
+                switch viewModel.scannerAvailability {
+                case .checking:
+                    ProgressView("Preparing camera…")
+                        .foregroundStyle(.white)
+                case .notSupported(let message):
+                    scannerMessageView(
+                        title: "Scanner unavailable",
+                        message: message,
+                        actions: [
+                            ("Retry", { Task { await viewModel.prepareScanner() } })
+                        ]
                     )
-                    .ignoresSafeArea(edges: .bottom)
-                )
-            case .failed(let message):
-                GlassCard(background: Color("NeutralCard")) {
-                    VStack(spacing: 12) {
-                        Text(message)
-                            .foregroundStyle(Color("BrandDanger"))
-                        PrimaryButton(title: "Try again") {
-                            viewModel.retry()
+                case .permissionDenied:
+                    scannerMessageView(
+                        title: "Camera access needed",
+                        message: "Enable camera permissions in Settings to scan QR codes.",
+                        actions: [
+                            ("Open Settings", { openSettings() })
+                        ]
+                    )
+                case .unavailable(let message):
+                    scannerMessageView(
+                        title: "Camera busy",
+                        message: message,
+                        actions: [
+                            ("Retry", { Task { await viewModel.prepareScanner() } })
+                        ]
+                    )
+                case .ready:
+                    VStack(spacing: 4) {
+                        Text(viewModel.instructions)
+                            .font(.subheadline)
+                            .foregroundStyle(.white)
+                            .padding(.top, 24)
+                            .padding(.horizontal)
+
+                        if let debug = viewModel.debugMessage {
+                            Text(debug)
+                                .font(.caption2)
+                                .foregroundStyle(Color("NeutralTextSecondary"))
                         }
                     }
                 }
-                .padding()
-            case .scanning:
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color("BrandPrimaryLight"), lineWidth: 3)
-                    .frame(width: 260, height: 260)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color.clear)
-                    )
-                    .padding(.bottom, 120)
+            }
+
+            Spacer()
+
+            if viewModel.scannerAvailability == .ready {
+                scanningStateContent
             }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.state)
-    }
-}
-
-#if canImport(VisionKit)
-@available(iOS 17.0, *)
-private struct QRDataScannerView: UIViewControllerRepresentable {
-    @ObservedObject var viewModel: QRScannerViewModel
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.scannerAvailability)
     }
 
-    func makeUIViewController(context: Context) -> DataScannerViewController {
-        let controller = DataScannerViewController(
-            recognizedDataTypes: [.barcode(symbologies: [.qr])],
-            qualityLevel: .balanced,
-            recognizesMultipleItems: false,
-            isHighFrameRateTrackingEnabled: true,
-            isPinchToZoomEnabled: true,
-            isGuidanceEnabled: true
-        )
-        controller.delegate = context.coordinator
-
-        // NOTE: Requires NSCameraUsageDescription in Info.plist.
-        // The human developer must add the camera permission copy in Xcode.
-        try? controller.startScanning()
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {
+    @ViewBuilder
+    private var scanningStateContent: some View {
         switch viewModel.state {
-        case .decoded, .failed:
-            uiViewController.stopScanning()
+        case .decoded(let payload):
+            VStack(spacing: 16) {
+                CareCardView(payload: payload)
+                PrimaryButton(title: "Scan another code") {
+                    viewModel.retry()
+                }
+            }
+            .padding()
+            .background(
+                LinearGradient(
+                    colors: [
+                        Color.black.opacity(0.6),
+                        Color.black.opacity(0.3)
+                    ],
+                    startPoint: .bottom,
+                    endPoint: .top
+                )
+                .ignoresSafeArea(edges: .bottom)
+            )
+        case .failed(let message):
+            GlassCard(background: Color("NeutralCard")) {
+                VStack(spacing: 12) {
+                    Text(message)
+                        .foregroundStyle(Color("BrandDanger"))
+                    PrimaryButton(title: "Retry scanning") {
+                        viewModel.retry()
+                    }
+                }
+            }
+            .padding()
         case .scanning:
-            try? uiViewController.startScanning()
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color("BrandPrimaryLight"), lineWidth: 3)
+                .frame(width: 260, height: 260)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.clear)
+                )
+                .padding(.bottom, 120)
         }
     }
 
-    final class Coordinator: NSObject, DataScannerViewControllerDelegate {
-        let parent: QRDataScannerView
-
-        init(parent: QRDataScannerView) {
-            self.parent = parent
-        }
-
-        func dataScanner(_ dataScanner: DataScannerViewController, didAdd recognizedItems: [RecognizedItem]) {
-            for item in recognizedItems {
-                guard case .barcode(let barcode) = item,
-                      let payload = barcode.payloadStringValue else { continue }
-                parent.viewModel.handleScannedString(payload)
+    private func scannerMessageView(
+        title: String,
+        message: String,
+        actions: [(title: String, action: () -> Void)]
+    ) -> some View {
+        GlassCard(background: Color("NeutralCard")) {
+            VStack(spacing: 12) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(Color("NeutralText"))
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(Color("NeutralTextSecondary"))
+                    .multilineTextAlignment(.center)
+                ForEach(actions.indices, id: \.self) { index in
+                    PrimaryButton(title: actions[index].title, action: actions[index].action)
+                }
             }
         }
+        .padding()
+    }
 
-        func dataScanner(_ dataScanner: DataScannerViewController, didFailWithError error: Error) {
-            parent.viewModel.handleCameraError()
+    private func openSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(settingsURL)
+    }
+}
+
+private struct QRAVScannerView: UIViewControllerRepresentable {
+    @ObservedObject var viewModel: QRScannerViewModel
+    let isActive: Bool
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(viewModel: viewModel)
+    }
+
+    func makeUIViewController(context: Context) -> CameraScannerViewController {
+        CameraScannerViewController(
+            viewModel: viewModel,
+            coordinator: context.coordinator
+        )
+    }
+
+    func updateUIViewController(_ controller: CameraScannerViewController, context: Context) {
+        controller.updateCaptureState(
+            shouldRun: viewModel.scannerAvailability == .ready && isActive,
+            scanState: viewModel.state
+        )
+    }
+
+    static func dismantleUIViewController(_ controller: CameraScannerViewController, coordinator: Coordinator) {
+        controller.stopSession()
+    }
+
+    final class Coordinator: NSObject {
+        let viewModel: QRScannerViewModel
+
+        init(viewModel: QRScannerViewModel) {
+            self.viewModel = viewModel
         }
     }
 }
-#endif
+
+private final class CameraScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+    private let viewModel: QRScannerViewModel
+    private weak var coordinator: QRAVScannerView.Coordinator?
+    private let session = AVCaptureSession()
+    private let sessionQueue = DispatchQueue(label: "qr.scanner.session")
+    private var previewLayer: AVCaptureVideoPreviewLayer?
+    private var isConfigured = false
+    private var isRunning = false
+
+    init(viewModel: QRScannerViewModel, coordinator: QRAVScannerView.Coordinator) {
+        self.viewModel = viewModel
+        self.coordinator = coordinator
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+        configureSessionIfNeeded()
+        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(previewLayer)
+        self.previewLayer = previewLayer
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer?.frame = view.bounds
+    }
+
+    func updateCaptureState(shouldRun: Bool, scanState: QRScannerViewModel.ScanState) {
+        switch scanState {
+        case .scanning:
+            if shouldRun {
+                startSession()
+            } else {
+                stopSession()
+            }
+        case .decoded, .failed:
+            stopSession()
+        }
+    }
+
+    func stopSession() {
+        guard isRunning else { return }
+        sessionQueue.async {
+            self.session.stopRunning()
+            self.isRunning = false
+        }
+    }
+
+    private func startSession() {
+        configureSessionIfNeeded()
+        guard !isRunning else { return }
+        sessionQueue.async {
+            guard !self.session.isRunning else { return }
+            self.session.startRunning()
+            self.isRunning = true
+        }
+    }
+
+    private func configureSessionIfNeeded() {
+        guard !isConfigured else { return }
+        isConfigured = true
+        session.beginConfiguration()
+
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+              let input = try? AVCaptureDeviceInput(device: device),
+              session.canAddInput(input) else {
+            viewModel.handleCameraError()
+            session.commitConfiguration()
+            return
+        }
+        session.addInput(input)
+
+        let metadataOutput = AVCaptureMetadataOutput()
+        guard session.canAddOutput(metadataOutput) else {
+            viewModel.handleCameraError()
+            session.commitConfiguration()
+            return
+        }
+        session.addOutput(metadataOutput)
+        metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+        metadataOutput.metadataObjectTypes = [.qr]
+        session.commitConfiguration()
+    }
+
+    func metadataOutput(
+        _ output: AVCaptureMetadataOutput,
+        didOutput metadataObjects: [AVMetadataObject],
+        from connection: AVCaptureConnection
+    ) {
+        guard case .scanning = viewModel.state else { return }
+        guard let metadata = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+              metadata.type == .qr,
+              let value = metadata.stringValue else { return }
+        viewModel.recordDetection(sourceDescription: "AVFoundation", payload: value)
+        viewModel.handleScannedString(value)
+        stopSession()
+    }
+}
 
 #Preview("Scanning") {
     NavigationStack {

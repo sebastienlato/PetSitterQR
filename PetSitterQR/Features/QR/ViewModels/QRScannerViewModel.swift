@@ -5,6 +5,7 @@
 //  Created by Codex on 2025-11-16.
 //
 
+import AVFoundation
 import Combine
 import SwiftUI
 
@@ -16,7 +17,17 @@ final class QRScannerViewModel: ObservableObject {
         case failed(String)
     }
 
+    enum ScannerAvailability: Equatable {
+        case checking
+        case ready
+        case notSupported(String)
+        case permissionDenied
+        case unavailable(String)
+    }
+
+    @Published private(set) var scannerAvailability: ScannerAvailability = .checking
     @Published private(set) var state: ScanState = .scanning
+    @Published var debugMessage: String?
 
     private let qrService: QRCodeServiceProtocol
 
@@ -47,10 +58,48 @@ final class QRScannerViewModel: ObservableObject {
 
     func retry() {
         state = .scanning
+        debugMessage = nil
     }
 
     func handleCameraError() {
         state = .failed("Unable to access the camera. Please check permissions and try again.")
+    }
+
+    func recordDetection(sourceDescription: String, payload: String?) {
+#if DEBUG
+        print("Detected barcode [\(sourceDescription)] payload: \(payload ?? "<none>")")
+#endif
+        debugMessage = "Last detected: \(payload ?? "n/a")"
+    }
+
+    func prepareScanner() async {
+        scannerAvailability = .checking
+
+        guard AVCaptureDevice.default(for: .video) != nil else {
+            scannerAvailability = .notSupported("QR scanning requires a device with a camera.")
+            return
+        }
+
+        let permissionGranted = await requestCameraAccessIfNeeded()
+        guard permissionGranted else {
+            scannerAvailability = .permissionDenied
+            return
+        }
+
+        scannerAvailability = .ready
+    }
+
+    private func requestCameraAccessIfNeeded() async -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            return true
+        case .notDetermined:
+            return await AVCaptureDevice.requestAccess(for: .video)
+        case .denied, .restricted:
+            return false
+        @unknown default:
+            return false
+        }
     }
 }
 
