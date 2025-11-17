@@ -115,7 +115,23 @@ final class PetListViewModel: ObservableObject {
         }
     }
 
-    func importFromQRCode(_ payload: PetQRCodePayload) async {
+    enum ImportResult {
+        case imported
+        case alreadyExists
+        case failed
+    }
+
+    func importFromQRCode(_ payload: PetQRCodePayload) async -> ImportResult {
+        if let existing = pets.first(where: {
+            $0.name == payload.name &&
+            $0.ageDescription == payload.ageDescription &&
+            $0.feedingInfo.summary == payload.feedingSummary &&
+            $0.careNotes?.extraNotes == payload.extraNotes
+        }) {
+            Haptics.warning()
+            return .alreadyExists
+        }
+
         let pet = Pet(
             id: UUID(),
             name: payload.name,
@@ -139,9 +155,11 @@ final class PetListViewModel: ObservableObject {
             try await storageService.savePet(pet)
             await refreshPetsFromStore()
             Haptics.success()
+            return .imported
         } catch {
             state = .failed("Unable to import pet. Please try again.")
             Haptics.warning()
+            return .failed
         }
     }
 }

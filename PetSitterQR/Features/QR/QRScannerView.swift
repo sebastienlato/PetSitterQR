@@ -103,12 +103,6 @@ struct QRScannerView: View {
                             .padding(.top, 24)
                             .padding(.horizontal)
                             .accessibilityAddTraits(.isHeader)
-
-                        if let debug = viewModel.debugMessage {
-                            Text(debug)
-                                .font(.caption2)
-                                .foregroundStyle(Color("NeutralTextSecondary"))
-                        }
                     }
                 }
             }
@@ -129,12 +123,9 @@ struct QRScannerView: View {
         case .decoded(let payload):
             VStack(spacing: 16) {
                 CareCardView(payload: payload)
-                PrimaryButton(
-                    title: viewModel.hasImportedCurrentPayload ? "Added to My Pets" : "Add to My Pets"
-                ) {
+                PrimaryButton(title: "Add to My Pets") {
                     viewModel.importCurrentPayload()
                 }
-                .disabled(viewModel.hasImportedCurrentPayload)
 
                 PrimaryButton(title: "Scan another code") {
                     viewModel.retry()

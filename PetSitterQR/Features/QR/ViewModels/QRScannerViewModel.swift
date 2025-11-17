@@ -28,14 +28,13 @@ final class QRScannerViewModel: ObservableObject {
     @Published private(set) var scannerAvailability: ScannerAvailability = .checking
     @Published private(set) var state: ScanState = .scanning
     @Published var debugMessage: String?
-    @Published private(set) var hasImportedCurrentPayload = false
 
     private let qrService: QRCodeServiceProtocol
-    private var importHandler: ((PetQRCodePayload) -> Void)?
+    private var importHandler: ((PetQRCodePayload) async -> PetListViewModel.ImportResult)?
 
     init(
         qrService: QRCodeServiceProtocol? = nil,
-        importHandler: ((PetQRCodePayload) -> Void)? = nil
+        importHandler: ((PetQRCodePayload) async -> PetListViewModel.ImportResult)? = nil
     ) {
         self.qrService = qrService ?? DefaultQRCodeService()
         self.importHandler = importHandler
@@ -58,7 +57,6 @@ final class QRScannerViewModel: ObservableObject {
             let payload = try qrService.parsePayload(from: string)
             state = .decoded(payload)
             Haptics.success()
-            hasImportedCurrentPayload = false
         } catch {
             state = .failed("This code is not a valid PetSitterQR card.")
             Haptics.warning()
@@ -68,7 +66,6 @@ final class QRScannerViewModel: ObservableObject {
     func retry() {
         state = .scanning
         debugMessage = nil
-        hasImportedCurrentPayload = false
     }
 
     func handleCameraError() {
@@ -80,7 +77,6 @@ final class QRScannerViewModel: ObservableObject {
 #if DEBUG
         print("Detected barcode [\(sourceDescription)] payload: \(payload ?? "<none>")")
 #endif
-        debugMessage = "Last detected: \(payload ?? "n/a")"
     }
 
     func prepareScanner() async {
@@ -101,12 +97,24 @@ final class QRScannerViewModel: ObservableObject {
     }
 
     func importCurrentPayload() {
-        guard case .decoded(let payload) = state, hasImportedCurrentPayload == false else { return }
-        importHandler?(payload)
-        hasImportedCurrentPayload = true
+        guard case .decoded(let payload) = state else { return }
+        guard let importHandler else { return }
+
+        Task {
+            let result = await importHandler(payload)
+            switch result {
+            case .imported, .alreadyExists:
+                await MainActor.run {
+                    state = .scanning
+                    debugMessage = nil
+                }
+            case .failed:
+                break
+            }
+        }
     }
 
-    func setImportHandler(_ handler: @escaping (PetQRCodePayload) -> Void) {
+    func setImportHandler(_ handler: @escaping (PetQRCodePayload) async -> PetListViewModel.ImportResult) {
         importHandler = handler
     }
 

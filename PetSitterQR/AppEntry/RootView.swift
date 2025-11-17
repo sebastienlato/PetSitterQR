@@ -17,9 +17,7 @@ struct RootView: View {
         let storageService = LocalPetStorageService(context: modelContext)
         let listVM = PetListViewModel(storageService: storageService)
         let scannerVM = QRScannerViewModel()
-        scannerVM.setImportHandler { payload in
-            Task { await listVM.importFromQRCode(payload) }
-        }
+        scannerVM.setImportHandler { payload in await listVM.importFromQRCode(payload) }
 
         _petListViewModel = StateObject(wrappedValue: listVM)
         _scannerViewModel = StateObject(wrappedValue: scannerVM)
@@ -64,9 +62,7 @@ private struct RootViewPreviewWrapper: View {
     init(storageService: PetStorageServiceProtocol) {
         let listVM = PetListViewModel(storageService: storageService)
         let scannerVM = QRScannerViewModel()
-        scannerVM.setImportHandler { payload in
-            Task { await listVM.importFromQRCode(payload) }
-        }
+        scannerVM.setImportHandler { payload in await listVM.importFromQRCode(payload) }
         _listViewModel = StateObject(wrappedValue: listVM)
         _scannerViewModel = StateObject(wrappedValue: scannerVM)
     }
