@@ -26,13 +26,12 @@ final class PetListViewModel: ObservableObject {
 
     init(
         storageService: PetStorageServiceProtocol? = nil,
-        initialPets: [Pet]? = nil
+        initialPets: [Pet] = []
     ) {
-        let resolvedPets = initialPets ?? Self.defaultInitialPets
-        self.storageService = storageService ?? InMemoryPetStorageService(initialPets: resolvedPets)
-        self.pets = resolvedPets
-        self.state = resolvedPets.isEmpty ? .idle : .loaded
-        self.hasLoaded = !resolvedPets.isEmpty
+        self.storageService = storageService ?? InMemoryPetStorageService(initialPets: initialPets)
+        self.pets = initialPets
+        self.state = initialPets.isEmpty ? .idle : .loaded
+        self.hasLoaded = !initialPets.isEmpty
     }
 
     func loadPetsIfNeeded() async {
@@ -48,15 +47,7 @@ final class PetListViewModel: ObservableObject {
         if force {
             hasLoaded = false
         }
-        state = .loading
-        do {
-            let fetchedPets = try await storageService.fetchPets()
-            pets = fetchedPets
-            state = .loaded
-            hasLoaded = true
-        } catch {
-            state = .failed("Unable to load pets. Please try again.")
-        }
+        await refreshPetsFromStore()
     }
 
     func binding(for pet: Pet) -> Binding<Pet>? {
@@ -82,15 +73,8 @@ final class PetListViewModel: ObservableObject {
         Task {
             do {
                 try await storageService.savePet(pet)
-                if let index = pets.firstIndex(where: { $0.id == pet.id }) {
-                    pets[index] = pet
-                } else {
-                    pets.append(pet)
-                }
+                await refreshPetsFromStore()
                 editorState = nil
-                if state != .loaded {
-                    state = .loaded
-                }
                 Haptics.success()
             } catch {
                 state = .failed("Unable to save pet. Please try again.")
@@ -103,7 +87,7 @@ final class PetListViewModel: ObservableObject {
         Task {
             do {
                 try await storageService.deletePet(pet)
-                pets.removeAll(where: { $0.id == pet.id })
+                await refreshPetsFromStore()
                 Haptics.success()
             } catch {
                 state = .failed("Unable to delete pet.")
@@ -115,15 +99,20 @@ final class PetListViewModel: ObservableObject {
     func cancelEditing() {
         editorState = nil
     }
-}
-
-private extension PetListViewModel {
-    static var defaultInitialPets: [Pet] {
-        #if DEBUG
-        return PetSamples.mockPets
-        #else
-        return []
-        #endif
+    
+    private func refreshPetsFromStore() async {
+        state = .loading
+        do {
+            let fetchedPets = try await storageService.fetchPets()
+            pets = fetchedPets
+            state = fetchedPets.isEmpty ? .idle : .loaded
+            hasLoaded = true
+#if DEBUG
+            print("PetListViewModel loaded \(fetchedPets.count) pets from storage")
+#endif
+        } catch {
+            state = .failed("Unable to load pets. Please try again.")
+        }
     }
 }
 

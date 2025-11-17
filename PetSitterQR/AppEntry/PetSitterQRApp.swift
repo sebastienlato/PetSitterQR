@@ -24,5 +24,6 @@ struct PetSitterQRApp: App {
         WindowGroup {
             RootView(modelContext: modelContainer.mainContext)
         }
+        .modelContainer(modelContainer)
     }
 }
