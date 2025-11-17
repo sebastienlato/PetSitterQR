@@ -69,6 +69,7 @@ struct QRScannerView: View {
                 case .checking:
                     ProgressView("Preparing camera…")
                         .foregroundStyle(.white)
+                        .accessibilityLabel("Preparing camera")
                 case .notSupported(let message):
                     scannerMessageView(
                         title: "Scanner unavailable",
@@ -100,6 +101,7 @@ struct QRScannerView: View {
                             .foregroundStyle(.white)
                             .padding(.top, 24)
                             .padding(.horizontal)
+                            .accessibilityAddTraits(.isHeader)
 
                         if let debug = viewModel.debugMessage {
                             Text(debug)
@@ -179,12 +181,15 @@ struct QRScannerView: View {
                     .font(.subheadline)
                     .foregroundStyle(Color("NeutralTextSecondary"))
                     .multilineTextAlignment(.center)
+                    .accessibilityLabel(message)
                 ForEach(actions.indices, id: \.self) { index in
                     PrimaryButton(title: actions[index].title, action: actions[index].action)
                 }
             }
         }
         .padding()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(message)")
     }
 
     private func openSettings() {

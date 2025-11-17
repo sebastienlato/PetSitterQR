@@ -5,16 +5,24 @@
 //  Created by Codex on 2025-11-16.
 //
 
+import SwiftData
 import SwiftUI
 
 struct RootView: View {
     @State private var selectedTab: RootTab = .pets
-    @StateObject private var scannerViewModel = QRScannerViewModel()
+    @StateObject private var petListViewModel: PetListViewModel
+    @StateObject private var scannerViewModel: QRScannerViewModel
+
+    init(modelContext: ModelContext) {
+        let storageService = LocalPetStorageService(context: modelContext)
+        _petListViewModel = StateObject(wrappedValue: PetListViewModel(storageService: storageService))
+        _scannerViewModel = StateObject(wrappedValue: QRScannerViewModel())
+    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                PetListView()
+                PetListView(viewModel: petListViewModel)
             }
             .tabItem {
                 Label("Pets", systemImage: "pawprint")
@@ -37,6 +45,29 @@ private enum RootTab {
     case scanner
 }
 
+#if DEBUG
 #Preview {
-    RootView()
+    let previewService = LocalPetStorageService.previewService(with: PetSamples.mockPets)
+    return RootViewPreviewWrapper(storageService: previewService)
 }
+
+private struct RootViewPreviewWrapper: View {
+    @StateObject var listViewModel: PetListViewModel
+    @StateObject var scannerViewModel = QRScannerViewModel()
+
+    init(storageService: PetStorageServiceProtocol) {
+        _listViewModel = StateObject(wrappedValue: PetListViewModel(storageService: storageService))
+    }
+
+    var body: some View {
+        TabView {
+            NavigationStack {
+                PetListView(viewModel: listViewModel)
+            }
+            NavigationStack {
+                QRScannerView(viewModel: scannerViewModel)
+            }
+        }
+    }
+}
+#endif

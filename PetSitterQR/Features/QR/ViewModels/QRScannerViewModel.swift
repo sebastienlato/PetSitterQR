@@ -51,8 +51,10 @@ final class QRScannerViewModel: ObservableObject {
         do {
             let payload = try qrService.parsePayload(from: string)
             state = .decoded(payload)
+            Haptics.success()
         } catch {
             state = .failed("This code is not a valid PetSitterQR card.")
+            Haptics.warning()
         }
     }
 
@@ -63,6 +65,7 @@ final class QRScannerViewModel: ObservableObject {
 
     func handleCameraError() {
         state = .failed("Unable to access the camera. Please check permissions and try again.")
+        Haptics.warning()
     }
 
     func recordDetection(sourceDescription: String, payload: String?) {

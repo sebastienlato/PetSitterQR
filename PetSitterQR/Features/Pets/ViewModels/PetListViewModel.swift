@@ -91,8 +91,10 @@ final class PetListViewModel: ObservableObject {
                 if state != .loaded {
                     state = .loaded
                 }
+                Haptics.success()
             } catch {
                 state = .failed("Unable to save pet. Please try again.")
+                Haptics.warning()
             }
         }
     }
@@ -102,8 +104,10 @@ final class PetListViewModel: ObservableObject {
             do {
                 try await storageService.deletePet(pet)
                 pets.removeAll(where: { $0.id == pet.id })
+                Haptics.success()
             } catch {
                 state = .failed("Unable to delete pet.")
+                Haptics.warning()
             }
         }
     }

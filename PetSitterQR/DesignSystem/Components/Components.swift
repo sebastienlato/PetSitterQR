@@ -132,6 +132,7 @@ struct EmptyStateView: View {
                 .font(.title3)
                 .bold()
                 .foregroundStyle(Color("NeutralText"))
+                .accessibilityAddTraits(.isHeader)
 
             Text(message)
                 .font(.subheadline)
@@ -145,6 +146,8 @@ struct EmptyStateView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(message)")
     }
 }
 

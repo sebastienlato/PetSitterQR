@@ -68,12 +68,12 @@ struct PetListView: View {
 
     @ViewBuilder
     private var contentList: some View {
-        if viewModel.pets.isEmpty {
-            EmptyStateView(
-                title: "No pets yet",
-                message: "Add your first pet to generate a care card and QR code.",
-                actionTitle: "Add pet",
-                action: { viewModel.addPetTapped() }
+                if viewModel.pets.isEmpty {
+                    EmptyStateView(
+                        title: "No pets yet",
+                        message: "Add your first pet to generate a care card and QR code.",
+                        actionTitle: "Add pet",
+                        action: { viewModel.addPetTapped() }
             )
             .padding(.top, 80)
         } else {
@@ -88,6 +88,14 @@ struct PetListView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            viewModel.delete(pet: pet)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .accessibilityLabel("Delete \(pet.name)")
+                    }
                 }
             }
         }
@@ -109,7 +117,7 @@ private struct PetRowView: View {
 
                     Text(pet.ageDescription)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color("NeutralTextSecondary"))
 
                     if pet.medicationInfo?.hasMeds == true {
                         TagPill(text: "Has meds")
@@ -121,12 +129,14 @@ private struct PetRowView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color("NeutralTextSecondary"))
             }
         }
         .contextMenu {
             Button("Edit", systemImage: "pencil", action: editAction)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(pet.name), \(pet.ageDescription). \(pet.medicationInfo?.hasMeds == true ? "Has medications" : "No medications").")
     }
 }
 

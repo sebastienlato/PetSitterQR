@@ -54,6 +54,7 @@ struct PetEditorView: View {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     onSave(viewModel.buildPet())
+                    Haptics.success()
                     dismiss()
                 }
                 .disabled(!viewModel.canSave)
