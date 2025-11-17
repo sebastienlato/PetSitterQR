@@ -69,5 +69,29 @@ extension Pet {
             careNotes: CareNotes(extraNotes: "Loves gentle walks.")
         )
     }
+
+    static var previewNoMeds: Pet {
+        Pet(
+            name: "Milo",
+            ageDescription: "2 years",
+            feedingInfo: FeedingInfo(summary: "Wet food in the morning", schedule: "7am"),
+            medicationInfo: nil,
+            careNotes: CareNotes(extraNotes: "Playtime every evening.")
+        )
+    }
+}
+
+enum PetSamples {
+    static let mockPets: [Pet] = [
+        .preview,
+        .previewNoMeds,
+        Pet(
+            name: "Poppy",
+            ageDescription: "6 months",
+            feedingInfo: FeedingInfo(summary: "Puppy kibble three times per day", schedule: "7am / 12pm / 6pm"),
+            medicationInfo: MedicationInfo(hasMeds: false, description: nil, dosage: nil),
+            careNotes: CareNotes(extraNotes: "Still training – keep walks short.")
+        )
+    ]
 }
 #endif
