@@ -96,29 +96,38 @@ struct SectionHeader: View {
 
 struct TagPill: View {
     let text: String
+    let iconName: String?
     let background: Color
     let foreground: Color
 
     init(
         text: String,
+        iconName: String? = nil,
         background: Color = Color("NeutralBackground"),
         foreground: Color = Color("NeutralTextSecondary")
     ) {
         self.text = text
+        self.iconName = iconName
         self.background = background
         self.foreground = foreground
     }
 
     var body: some View {
-        Text(text)
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(background)
-            )
-            .foregroundStyle(foreground)
+        HStack(spacing: 4) {
+            if let iconName {
+                Image(systemName: iconName)
+                    .font(.caption2)
+            }
+            Text(text)
+                .font(.caption)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(background)
+        )
+        .foregroundStyle(foreground)
     }
 }
 

@@ -73,6 +73,19 @@ struct PetDetailView: View {
             VStack(alignment: .center, spacing: 12) {
                 PetAvatarView(image: avatarImage.map { Image(uiImage: $0) }, size: 80)
 
+                Button {
+                    viewModel.editPet()
+                } label: {
+                    TagPill(
+                        text: "Edit photo",
+                        iconName: "camera.fill",
+                        background: Color("BrandPrimary"),
+                        foreground: Color("NeutralCard")
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Edit pet photo")
+
                 Text(viewModel.pet.name)
                     .font(.title)
                     .bold()

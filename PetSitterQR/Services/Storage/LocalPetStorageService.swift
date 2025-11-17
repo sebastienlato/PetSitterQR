@@ -96,9 +96,9 @@ final class LocalPetStorageService: PetStorageServiceProtocol {
     private let context: ModelContext
     private let imageStore: PetImageStore
 
-    init(context: ModelContext, imageStore: PetImageStore = .shared) {
+    init(context: ModelContext, imageStore: PetImageStore? = nil) {
         self.context = context
-        self.imageStore = imageStore
+        self.imageStore = imageStore ?? .shared
 #if DEBUG
         print("LocalPetStorageService initialized with context \(context)")
 #endif
