@@ -47,7 +47,14 @@ struct PetDetailView: View {
         }
         .navigationTitle(viewModel.pet.name)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                NavigationLink {
+                    QRGeneratorView(viewModel: QRGeneratorViewModel(pet: viewModel.pet))
+                } label: {
+                    Image(systemName: "qrcode")
+                }
+                .accessibilityLabel("Share care card")
+
                 Button("Edit") {
                     viewModel.editPet()
                 }

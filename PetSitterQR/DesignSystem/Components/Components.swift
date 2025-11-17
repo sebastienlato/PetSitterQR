@@ -24,16 +24,21 @@ struct PetAvatarView: View {
             .clipShape(Circle())
             .overlay(
                 Circle()
-                    .strokeBorder(.secondary.opacity(0.3), lineWidth: 1)
+                    .strokeBorder(Color("NeutralTextSecondary").opacity(0.4), lineWidth: 1)
             )
-            .shadow(radius: 2)
+            .shadow(color: Color("NeutralText").opacity(0.08), radius: 4, x: 0, y: 2)
     }
 }
 
 struct GlassCard<Content: View>: View {
+    let background: Color
     let content: () -> Content
 
-    init(@ViewBuilder content: @escaping () -> Content) {
+    init(
+        background: Color = Color("NeutralCard"),
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.background = background
         self.content = content
     }
 
@@ -41,8 +46,9 @@ struct GlassCard<Content: View>: View {
         content()
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.thinMaterial)
+            .background(background)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: Color("BrandPrimary").opacity(0.05), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -58,6 +64,7 @@ struct PrimaryButton: View {
                 .padding(.vertical, 12)
         }
         .buttonStyle(.borderedProminent)
+        .tint(Color("BrandPrimary"))
     }
 }
 
@@ -78,7 +85,7 @@ struct SectionHeader: View {
             if let subtitle {
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color("NeutralTextSecondary"))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -95,9 +102,9 @@ struct TagPill: View {
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(.secondary.opacity(0.15))
+                    .fill(Color("NeutralBackground"))
             )
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color("NeutralTextSecondary"))
     }
 }
 
@@ -124,11 +131,12 @@ struct EmptyStateView: View {
             Text(title)
                 .font(.title3)
                 .bold()
+                .foregroundStyle(Color("NeutralText"))
 
             Text(message)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color("NeutralTextSecondary"))
 
             if let actionTitle, let action {
                 PrimaryButton(title: actionTitle, action: action)
@@ -160,13 +168,15 @@ struct QRCodeCard<Content: View>: View {
             VStack(spacing: 12) {
                 Text(title)
                     .font(.headline)
+                    .foregroundStyle(Color("NeutralText"))
 
                 Text(message)
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color("NeutralTextSecondary"))
 
                 content()
+                    .padding(.top, 8)
                     .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity)

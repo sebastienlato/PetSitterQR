@@ -12,6 +12,7 @@ struct PetEditorView: View {
     @StateObject private var viewModel: PetEditorViewModel
     let onSave: (Pet) -> Void
 
+    @MainActor
     init(pet: Pet?, onSave: @escaping (Pet) -> Void) {
         _viewModel = StateObject(wrappedValue: PetEditorViewModel(pet: pet))
         self.onSave = onSave

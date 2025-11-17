@@ -56,6 +56,52 @@ struct PetQRCodePayload: Codable, Equatable {
     var feedingSummary: String
     var medicationSummary: String?
     var extraNotes: String?
+
+    init(
+        name: String,
+        ageDescription: String,
+        feedingSummary: String,
+        medicationSummary: String? = nil,
+        extraNotes: String? = nil
+    ) {
+        self.name = name
+        self.ageDescription = ageDescription
+        self.feedingSummary = feedingSummary
+        self.medicationSummary = medicationSummary
+        self.extraNotes = extraNotes
+    }
+
+    init(pet: Pet) {
+        let medicationSummary: String?
+        if pet.medicationInfo?.hasMeds == true {
+            var parts: [String] = []
+            if let description = pet.medicationInfo?.description {
+                parts.append(description)
+            }
+            if let dosage = pet.medicationInfo?.dosage {
+                parts.append("Dosage: \(dosage)")
+            }
+            medicationSummary = parts.isEmpty ? "Requires medication." : parts.joined(separator: "\n")
+        } else {
+            medicationSummary = nil
+        }
+
+        let notes = pet.careNotes?.extraNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        let extraNotes = notes?.isEmpty == false ? notes : nil
+
+        var feedingSummary = pet.feedingInfo.summary
+        if let schedule = pet.feedingInfo.schedule {
+            feedingSummary += "\nSchedule: \(schedule)"
+        }
+
+        self.init(
+            name: pet.name,
+            ageDescription: pet.ageDescription,
+            feedingSummary: feedingSummary,
+            medicationSummary: medicationSummary,
+            extraNotes: extraNotes
+        )
+    }
 }
 
 #if DEBUG
@@ -93,5 +139,17 @@ enum PetSamples {
             careNotes: CareNotes(extraNotes: "Still training – keep walks short.")
         )
     ]
+}
+
+extension PetQRCodePayload {
+    static var preview: PetQRCodePayload {
+        PetQRCodePayload(
+            name: "Luna",
+            ageDescription: "3 years",
+            feedingSummary: "1 cup kibble twice daily",
+            medicationSummary: "Allergy pill nightly",
+            extraNotes: "Prefers ceramic bowls."
+        )
+    }
 }
 #endif

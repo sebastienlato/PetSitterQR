@@ -9,6 +9,7 @@ import SwiftUI
 
 struct RootView: View {
     @State private var selectedTab: RootTab = .pets
+    @StateObject private var scannerViewModel = QRScannerViewModel()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -21,7 +22,7 @@ struct RootView: View {
             .tag(RootTab.pets)
 
             NavigationStack {
-                QRScannerView()
+                QRScannerView(viewModel: scannerViewModel)
             }
             .tabItem {
                 Label("Scan", systemImage: "qrcode.viewfinder")

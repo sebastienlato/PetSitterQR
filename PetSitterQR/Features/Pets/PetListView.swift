@@ -10,8 +10,14 @@ import SwiftUI
 struct PetListView: View {
     @StateObject private var viewModel: PetListViewModel
 
-    init(viewModel: PetListViewModel = PetListViewModel()) {
+    @MainActor
+    init(viewModel: PetListViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
+    }
+
+    @MainActor
+    init() {
+        _viewModel = StateObject(wrappedValue: PetListViewModel())
     }
 
     var body: some View {
@@ -124,8 +130,10 @@ private struct PetRowView: View {
     }
 }
 
+#if DEBUG
 #Preview("Multiple pets") {
     NavigationStack {
         PetListView(viewModel: PetListViewModel(initialPets: PetSamples.mockPets))
     }
 }
+#endif

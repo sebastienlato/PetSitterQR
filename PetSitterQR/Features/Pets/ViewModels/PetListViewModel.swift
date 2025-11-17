@@ -5,6 +5,7 @@
 //  Created by Codex on 2025-11-16.
 //
 
+import Combine
 import SwiftUI
 
 @MainActor
@@ -24,13 +25,14 @@ final class PetListViewModel: ObservableObject {
     private var hasLoaded = false
 
     init(
-        storageService: PetStorageServiceProtocol = InMemoryPetStorageService(initialPets: PetSamples.mockPets),
-        initialPets: [Pet] = []
+        storageService: PetStorageServiceProtocol? = nil,
+        initialPets: [Pet]? = nil
     ) {
-        self.storageService = storageService
-        self.pets = initialPets
-        self.state = initialPets.isEmpty ? .idle : .loaded
-        self.hasLoaded = !initialPets.isEmpty
+        let resolvedPets = initialPets ?? Self.defaultInitialPets
+        self.storageService = storageService ?? InMemoryPetStorageService(initialPets: resolvedPets)
+        self.pets = resolvedPets
+        self.state = resolvedPets.isEmpty ? .idle : .loaded
+        self.hasLoaded = !resolvedPets.isEmpty
     }
 
     func loadPetsIfNeeded() async {
@@ -108,6 +110,16 @@ final class PetListViewModel: ObservableObject {
 
     func cancelEditing() {
         editorState = nil
+    }
+}
+
+private extension PetListViewModel {
+    static var defaultInitialPets: [Pet] {
+        #if DEBUG
+        return PetSamples.mockPets
+        #else
+        return []
+        #endif
     }
 }
 

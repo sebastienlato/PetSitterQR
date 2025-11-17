@@ -11,38 +11,44 @@ struct CareCardView: View {
     let payload: PetQRCodePayload
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(payload.name)
-                .font(.title2)
-                .bold()
+        GlassCard {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(payload.name)
+                        .font(.title2)
+                        .bold()
+                        .foregroundStyle(Color("NeutralText"))
 
-            Text(payload.feedingSummary)
-                .font(.body)
+                    Text(payload.ageDescription)
+                        .font(.subheadline)
+                        .foregroundStyle(Color("NeutralTextSecondary"))
+                }
 
-            if let medicationSummary = payload.medicationSummary {
-                Text(medicationSummary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionHeader("Feeding instructions")
+                    Text(payload.feedingSummary)
+                }
 
-            if let extraNotes = payload.extraNotes {
-                Text(extraNotes)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if let medicationSummary = payload.medicationSummary {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SectionHeader("Medications")
+                        Text(medicationSummary)
+                            .foregroundStyle(Color("NeutralTextSecondary"))
+                    }
+                }
+
+                if let extraNotes = payload.extraNotes {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SectionHeader("Extra care notes")
+                        Text(extraNotes)
+                            .foregroundStyle(Color("NeutralTextSecondary"))
+                    }
+                }
             }
         }
-        .padding()
     }
 }
 
 #Preview {
-    CareCardView(
-        payload: PetQRCodePayload(
-            name: "Luna",
-            ageDescription: "3 years",
-            feedingSummary: "1 cup kibble twice daily",
-            medicationSummary: "Allergy pill nightly",
-            extraNotes: "Prefers ceramic bowls."
-        )
-    )
+    CareCardView(payload: .preview)
 }
