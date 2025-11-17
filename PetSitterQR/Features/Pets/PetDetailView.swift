@@ -23,6 +23,7 @@ struct PetDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         SectionHeader("Feeding instructions", subtitle: viewModel.feedingSchedule)
                         Text(viewModel.pet.feedingInfo.summary)
+                            .foregroundStyle(Color("NeutralText"))
                     }
                 }
 
@@ -38,13 +39,14 @@ struct PetDetailView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             SectionHeader("Extra care notes")
                             Text(notes)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color("NeutralTextSecondary"))
                         }
                     }
                 }
             }
             .padding()
         }
+        .background(Color("NeutralBackground").ignoresSafeArea())
         .navigationTitle(viewModel.pet.name)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -58,6 +60,7 @@ struct PetDetailView: View {
                 Button("Edit") {
                     viewModel.editPet()
                 }
+                .foregroundStyle(Color("BrandPrimary"))
             }
         }
     }
@@ -71,10 +74,11 @@ struct PetDetailView: View {
                     Text(viewModel.pet.name)
                         .font(.largeTitle)
                         .bold()
+                        .foregroundStyle(Color("NeutralText"))
 
                     Text(viewModel.pet.ageDescription)
                         .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color("NeutralTextSecondary"))
 
                     if viewModel.hasMedications {
                         TagPill(text: "Needs meds")
@@ -92,15 +96,16 @@ struct PetDetailView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     if let description = viewModel.medicationDescription {
                         Text(description)
+                            .foregroundStyle(Color("NeutralText"))
                     }
                     if let dosage = viewModel.medicationDosage {
                         Text("Dosage: \(dosage)")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color("NeutralTextSecondary"))
                     }
                 }
             } else {
                 Text("No medications required.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color("NeutralTextSecondary"))
             }
         }
     }

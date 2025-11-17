@@ -30,7 +30,7 @@ struct QRScannerView: View {
             scannerLayer
             overlayContent
         }
-        .background(Color.black.opacity(0.8))
+        .background(Color("NeutralBackgroundDark").ignoresSafeArea())
         .navigationTitle("Scan QR")
         .task {
             await viewModel.prepareScanner()
@@ -68,7 +68,8 @@ struct QRScannerView: View {
                 switch viewModel.scannerAvailability {
                 case .checking:
                     ProgressView("Preparing camera…")
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color("NeutralText"))
+                        .tint(Color("BrandPrimary"))
                         .accessibilityLabel("Preparing camera")
                 case .notSupported(let message):
                     scannerMessageView(
@@ -98,7 +99,7 @@ struct QRScannerView: View {
                     VStack(spacing: 4) {
                         Text(viewModel.instructions)
                             .font(.subheadline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color("NeutralText"))
                             .padding(.top, 24)
                             .padding(.horizontal)
                             .accessibilityAddTraits(.isHeader)
@@ -136,8 +137,8 @@ struct QRScannerView: View {
             .background(
                 LinearGradient(
                     colors: [
-                        Color.black.opacity(0.6),
-                        Color.black.opacity(0.3)
+                        Color("NeutralBackgroundDark").opacity(0.95),
+                        Color("NeutralBackground").opacity(0.8)
                     ],
                     startPoint: .bottom,
                     endPoint: .top
@@ -255,7 +256,7 @@ private final class CameraScannerViewController: UIViewController, AVCaptureMeta
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .black
+        view.backgroundColor = UIColor(named: "NeutralBackgroundDark") ?? .black
         configureSessionIfNeeded()
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill

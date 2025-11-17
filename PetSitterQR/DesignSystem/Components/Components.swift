@@ -60,11 +60,12 @@ struct PrimaryButton: View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
+                .foregroundStyle(Color("NeutralCard"))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
+                .background(Color("BrandPrimary"))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-        .buttonStyle(.borderedProminent)
-        .tint(Color("BrandPrimary"))
     }
 }
 

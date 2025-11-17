@@ -82,6 +82,10 @@ struct QRGeneratorView: View {
                 .frame(maxWidth: .infinity)
                 .background(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color("BrandPrimaryLight"), lineWidth: 2)
+                )
         } else if let error = viewModel.errorMessage {
             VStack(spacing: 12) {
                 Text(error)
@@ -93,6 +97,7 @@ struct QRGeneratorView: View {
             }
         } else {
             ProgressView()
+                .tint(Color("BrandPrimary"))
                 .frame(width: 80, height: 80)
         }
     }

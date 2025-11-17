@@ -44,11 +44,15 @@ struct PetEditorView: View {
             }
         }
         .navigationTitle(viewModel.isEditing ? "Edit Pet" : "Add Pet")
+        .tint(Color("BrandPrimary"))
+        .scrollContentBackground(.hidden)
+        .background(Color("NeutralBackground"))
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
                     dismiss()
                 }
+                .foregroundStyle(Color("NeutralTextSecondary"))
             }
 
             ToolbarItem(placement: .confirmationAction) {
@@ -58,6 +62,7 @@ struct PetEditorView: View {
                     dismiss()
                 }
                 .disabled(!viewModel.canSave)
+                .foregroundStyle(Color("BrandPrimary"))
             }
         }
     }

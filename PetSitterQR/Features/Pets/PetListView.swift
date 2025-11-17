@@ -26,6 +26,8 @@ struct PetListView: View {
                 switch viewModel.state {
                 case .loading:
                     ProgressView("Loading pets…")
+                        .tint(Color("BrandPrimary"))
+                        .foregroundStyle(Color("NeutralTextSecondary"))
                         .padding(.top, 80)
                 case .failed(let message):
                     EmptyStateView(
@@ -42,6 +44,7 @@ struct PetListView: View {
             .padding(.horizontal)
             .padding(.top, 24)
         }
+        .background(Color("NeutralBackground").ignoresSafeArea())
         .navigationTitle("My Pets")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -49,6 +52,7 @@ struct PetListView: View {
                     viewModel.addPetTapped()
                 } label: {
                     Image(systemName: "plus")
+                        .foregroundStyle(Color("BrandPrimary"))
                 }
                 .accessibilityLabel("Add pet")
             }

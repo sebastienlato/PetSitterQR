@@ -27,6 +27,7 @@ struct CareCardView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Feeding instructions")
                     Text(payload.feedingSummary)
+                        .foregroundStyle(Color("NeutralText"))
                 }
 
                 if let medicationSummary = payload.medicationSummary {
