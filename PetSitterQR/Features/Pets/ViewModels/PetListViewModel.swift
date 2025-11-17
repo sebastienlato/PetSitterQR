@@ -9,11 +9,52 @@ import SwiftUI
 
 @MainActor
 final class PetListViewModel: ObservableObject {
+    enum LoadState: Equatable {
+        case idle
+        case loading
+        case loaded
+        case failed(String)
+    }
+
     @Published private(set) var pets: [Pet]
+    @Published private(set) var state: LoadState
     @Published var editorState: EditorState?
 
-    init(pets: [Pet] = PetSamples.mockPets) {
-        self.pets = pets
+    private let storageService: PetStorageServiceProtocol
+    private var hasLoaded = false
+
+    init(
+        storageService: PetStorageServiceProtocol = InMemoryPetStorageService(initialPets: PetSamples.mockPets),
+        initialPets: [Pet] = []
+    ) {
+        self.storageService = storageService
+        self.pets = initialPets
+        self.state = initialPets.isEmpty ? .idle : .loaded
+        self.hasLoaded = !initialPets.isEmpty
+    }
+
+    func loadPetsIfNeeded() async {
+        guard !hasLoaded else { return }
+        await loadPets()
+    }
+
+    func reload() async {
+        await loadPets(force: true)
+    }
+
+    private func loadPets(force: Bool = false) async {
+        if force {
+            hasLoaded = false
+        }
+        state = .loading
+        do {
+            let fetchedPets = try await storageService.fetchPets()
+            pets = fetchedPets
+            state = .loaded
+            hasLoaded = true
+        } catch {
+            state = .failed("Unable to load pets. Please try again.")
+        }
     }
 
     func binding(for pet: Pet) -> Binding<Pet>? {
@@ -36,12 +77,33 @@ final class PetListViewModel: ObservableObject {
     }
 
     func save(pet: Pet) {
-        if let index = pets.firstIndex(where: { $0.id == pet.id }) {
-            pets[index] = pet
-        } else {
-            pets.append(pet)
+        Task {
+            do {
+                try await storageService.savePet(pet)
+                if let index = pets.firstIndex(where: { $0.id == pet.id }) {
+                    pets[index] = pet
+                } else {
+                    pets.append(pet)
+                }
+                editorState = nil
+                if state != .loaded {
+                    state = .loaded
+                }
+            } catch {
+                state = .failed("Unable to save pet. Please try again.")
+            }
         }
-        editorState = nil
+    }
+
+    func delete(pet: Pet) {
+        Task {
+            do {
+                try await storageService.deletePet(pet)
+                pets.removeAll(where: { $0.id == pet.id })
+            } catch {
+                state = .failed("Unable to delete pet.")
+            }
+        }
     }
 
     func cancelEditing() {

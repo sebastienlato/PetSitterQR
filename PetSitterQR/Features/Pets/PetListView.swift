@@ -8,36 +8,29 @@
 import SwiftUI
 
 struct PetListView: View {
-    @StateObject private var viewModel = PetListViewModel()
+    @StateObject private var viewModel: PetListViewModel
+
+    init(viewModel: PetListViewModel = PetListViewModel()) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                if viewModel.pets.isEmpty {
+                switch viewModel.state {
+                case .loading:
+                    ProgressView("Loading pets…")
+                        .padding(.top, 80)
+                case .failed(let message):
                     EmptyStateView(
-                        title: "No pets yet",
-                        message: "Add your first pet to generate a care card and QR code.",
-                        actionTitle: "Add pet",
-                        action: { viewModel.addPetTapped() }
+                        title: "Something went wrong",
+                        message: message,
+                        actionTitle: "Retry",
+                        action: { Task { await viewModel.reload() } }
                     )
                     .padding(.top, 80)
-                } else {
-                    ForEach(viewModel.pets) { pet in
-                        if let binding = viewModel.binding(for: pet) {
-                            NavigationLink {
-                                PetDetailView(
-                                    pet: binding,
-                                    onEdit: { viewModel.edit(pet: binding.wrappedValue) }
-                                )
-                            } label: {
-                                PetRowView(
-                                    pet: pet,
-                                    editAction: { viewModel.edit(pet: pet) }
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                default:
+                    contentList
                 }
             }
             .padding(.horizontal)
@@ -54,14 +47,42 @@ struct PetListView: View {
                 .accessibilityLabel("Add pet")
             }
         }
-        .sheet(item: $viewModel.editorState, onDismiss: {
-            viewModel.cancelEditing()
-        }) { state in
+        .sheet(item: $viewModel.editorState) { state in
             NavigationStack {
                 PetEditorView(
                     pet: state.pet,
                     onSave: { viewModel.save(pet: $0) }
                 )
+            }
+        }
+        .task {
+            await viewModel.loadPetsIfNeeded()
+        }
+    }
+
+    @ViewBuilder
+    private var contentList: some View {
+        if viewModel.pets.isEmpty {
+            EmptyStateView(
+                title: "No pets yet",
+                message: "Add your first pet to generate a care card and QR code.",
+                actionTitle: "Add pet",
+                action: { viewModel.addPetTapped() }
+            )
+            .padding(.top, 80)
+        } else {
+            ForEach(viewModel.pets) { pet in
+                if let detailVM = PetDetailViewModel(petID: pet.id, listViewModel: viewModel) {
+                    NavigationLink {
+                        PetDetailView(viewModel: detailVM)
+                    } label: {
+                        PetRowView(
+                            pet: pet,
+                            editAction: { viewModel.edit(pet: pet) }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
@@ -105,6 +126,6 @@ private struct PetRowView: View {
 
 #Preview("Multiple pets") {
     NavigationStack {
-        PetListView()
+        PetListView(viewModel: PetListViewModel(initialPets: PetSamples.mockPets))
     }
 }
