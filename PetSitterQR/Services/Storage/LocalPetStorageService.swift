@@ -94,9 +94,11 @@ extension PersistedPet {
 @MainActor
 final class LocalPetStorageService: PetStorageServiceProtocol {
     private let context: ModelContext
+    private let imageStore: PetImageStore
 
-    init(context: ModelContext) {
+    init(context: ModelContext, imageStore: PetImageStore = .shared) {
         self.context = context
+        self.imageStore = imageStore
 #if DEBUG
         print("LocalPetStorageService initialized with context \(context)")
 #endif
@@ -120,7 +122,11 @@ final class LocalPetStorageService: PetStorageServiceProtocol {
     func savePet(_ pet: Pet) async throws {
         do {
             if let existing = try fetchPersistedPet(by: pet.id) {
+                let oldIdentifier = existing.imageIdentifier
                 existing.update(from: pet)
+                if let oldIdentifier, oldIdentifier != pet.imageIdentifier {
+                    try? imageStore.deleteImage(for: oldIdentifier)
+                }
             } else {
                 context.insert(PersistedPet(pet: pet))
             }
@@ -137,6 +143,9 @@ final class LocalPetStorageService: PetStorageServiceProtocol {
         do {
             guard let existing = try fetchPersistedPet(by: pet.id) else {
                 throw PetStorageServiceError.notFound
+            }
+            if let imageIdentifier = existing.imageIdentifier {
+                try? imageStore.deleteImage(for: imageIdentifier)
             }
             context.delete(existing)
             try context.save()

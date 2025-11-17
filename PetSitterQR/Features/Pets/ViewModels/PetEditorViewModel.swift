@@ -18,6 +18,7 @@ final class PetEditorViewModel: ObservableObject {
     @Published var medicationDescription: String
     @Published var medicationDosage: String
     @Published var extraNotes: String
+    @Published var imageIdentifier: String?
 
     private let originalID: UUID?
     private let originalImageIdentifier: String?
@@ -25,6 +26,7 @@ final class PetEditorViewModel: ObservableObject {
     init(pet: Pet?) {
         self.originalID = pet?.id
         self.originalImageIdentifier = pet?.imageIdentifier
+        self.imageIdentifier = pet?.imageIdentifier
 
         self.name = pet?.name ?? ""
         self.ageDescription = pet?.ageDescription ?? ""
@@ -71,10 +73,14 @@ final class PetEditorViewModel: ObservableObject {
             id: originalID ?? UUID(),
             name: name,
             ageDescription: ageDescription,
-            imageIdentifier: originalImageIdentifier,
+            imageIdentifier: imageIdentifier,
             feedingInfo: feedingInfo,
             medicationInfo: medicationInfo,
             careNotes: careNotes
         )
+    }
+
+    func updateImageIdentifier(_ identifier: String?) {
+        imageIdentifier = identifier
     }
 }

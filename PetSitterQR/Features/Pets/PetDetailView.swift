@@ -5,10 +5,12 @@
 //  Created by Codex on 2025-11-16.
 //
 
+import UIKit
 import SwiftUI
 
 struct PetDetailView: View {
     @StateObject private var viewModel: PetDetailViewModel
+    @State private var avatarImage: UIImage?
 
     init(viewModel: PetDetailViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -63,12 +65,13 @@ struct PetDetailView: View {
                 .foregroundStyle(Color("BrandPrimary"))
             }
         }
+        .onAppear(perform: loadImage)
     }
 
     private var heroSection: some View {
         GlassCard(background: Color("NeutralCard")) {
             VStack(alignment: .center, spacing: 12) {
-                PetAvatarView(size: 80)
+                PetAvatarView(image: avatarImage.map { Image(uiImage: $0) }, size: 80)
 
                 Text(viewModel.pet.name)
                     .font(.title)
@@ -161,6 +164,14 @@ struct PetDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private func loadImage() {
+        guard let identifier = viewModel.pet.imageIdentifier else {
+            avatarImage = nil
+            return
+        }
+        avatarImage = PetImageStore.shared.loadImage(for: identifier)
     }
 }
 

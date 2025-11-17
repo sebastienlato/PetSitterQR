@@ -5,12 +5,15 @@
 //  Created by Codex on 2025-11-16.
 //
 
+import UIKit
 import SwiftUI
 
 struct PetRowView: View {
     let pet: Pet
     let editAction: () -> Void
     let deleteAction: () -> Void
+
+    @State private var avatarImage: UIImage?
 
     private var hasMedications: Bool {
         pet.medicationInfo?.hasMeds == true
@@ -19,7 +22,7 @@ struct PetRowView: View {
     var body: some View {
         GlassCard(background: Color("NeutralCard")) {
             HStack(spacing: 12) {
-                PetAvatarView(size: 56)
+                PetAvatarView(image: avatarImage.map { Image(uiImage: $0) }, size: 56)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(pet.name)
@@ -49,6 +52,10 @@ struct PetRowView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(pet.name), \(pet.ageDescription). \(hasMedications ? "Has medications" : "No medications").")
+        .onAppear(perform: loadImage)
+        .onChange(of: pet.imageIdentifier) { _, _ in
+            loadImage()
+        }
     }
 
     private var medsTag: some View {
@@ -65,6 +72,14 @@ struct PetRowView: View {
                 foreground: Color("NeutralTextSecondary")
             )
         }
+    }
+
+    private func loadImage() {
+        guard let identifier = pet.imageIdentifier else {
+            avatarImage = nil
+            return
+        }
+        avatarImage = PetImageStore.shared.loadImage(for: identifier)
     }
 }
 

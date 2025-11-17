@@ -30,7 +30,7 @@ struct QRScannerView: View {
             scannerLayer
             overlayContent
         }
-        .background(Color("NeutralBackgroundDark").ignoresSafeArea())
+        .background(Color("NeutralBackground").ignoresSafeArea())
         .navigationTitle("Scan QR")
         .task {
             await viewModel.prepareScanner()
@@ -137,7 +137,7 @@ struct QRScannerView: View {
             .background(
                 LinearGradient(
                     colors: [
-                        Color("NeutralBackgroundDark").opacity(0.95),
+                        Color("NeutralBackground").opacity(0.95),
                         Color("NeutralBackground").opacity(0.8)
                     ],
                     startPoint: .bottom,
@@ -256,7 +256,7 @@ private final class CameraScannerViewController: UIViewController, AVCaptureMeta
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(named: "NeutralBackgroundDark") ?? .black
+        view.backgroundColor = UIColor(named: "NeutralBackground") ?? .black
         configureSessionIfNeeded()
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.videoGravity = .resizeAspectFill
