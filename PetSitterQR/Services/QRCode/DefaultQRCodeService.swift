@@ -25,23 +25,19 @@ struct DefaultQRCodeService: QRCodeServiceProtocol {
 
     func generateQRCodeImage(from payload: PetQRCodePayload) throws -> CGImage {
         let data = try encoder.encode(payload)
-        let filter = CIFilter.qrCodeGenerator()
+        guard let filter = CIFilter(name: "CIQRCodeGenerator") else {
+            throw QRCodeServiceError.encodingFailed
+        }
         filter.setValue(data, forKey: "inputMessage")
-        filter.correctionLevel = "M"
+        filter.setValue("M", forKey: "inputCorrectionLevel")
 
-        guard let ciImage = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 12, y: 12)) else {
+        guard let outputImage = filter.outputImage else {
             throw QRCodeServiceError.encodingFailed
         }
 
-        let inverted = ciImage
-            .applyingFilter("CIColorInvert")
-            .applyingFilter("CIColorControls", parameters: [
-                kCIInputBrightnessKey: 1.0,
-                kCIInputContrastKey: 1.0
-            ])
-            .applyingFilter("CIColorInvert")
+        let scaledImage = outputImage.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
 
-        guard let cgImage = context.createCGImage(inverted, from: inverted.extent) else {
+        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else {
             throw QRCodeServiceError.encodingFailed
         }
 

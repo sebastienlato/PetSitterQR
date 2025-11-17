@@ -78,14 +78,10 @@ struct QRGeneratorView: View {
                 .interpolation(.none)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 220, height: 220)
-                .padding()
-                .background(Color("NeutralBackground"))
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .background(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color("BrandPrimaryLight"), lineWidth: 2)
-                )
         } else if let error = viewModel.errorMessage {
             VStack(spacing: 12) {
                 Text(error)
