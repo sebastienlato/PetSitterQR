@@ -25,24 +25,34 @@ struct PetListView: View {
         Group {
             switch viewModel.state {
             case .loading:
-                ProgressView("Loading pets…")
-                    .tint(Color("BrandPrimary"))
-                    .foregroundStyle(Color("NeutralTextSecondary"))
-                    .padding(.top, 80)
+                VStack(alignment: .leading, spacing: 24) {
+                    header
+                    ProgressView("Loading pets…")
+                        .tint(Color("BrandPrimary"))
+                        .foregroundStyle(Color("NeutralTextSecondary"))
+                        .padding(.top, 32)
+                }
+                .padding(.horizontal, 16)
             case .failed(let message):
-                EmptyStateView(
-                    title: "Something went wrong",
-                    message: message,
-                    actionTitle: "Retry",
-                    action: { Task { await viewModel.reload() } }
-                )
-                .padding(.top, 80)
+                VStack(alignment: .leading, spacing: 24) {
+                    header
+                    EmptyStateView(
+                        title: "Something went wrong",
+                        message: message,
+                        iconName: "exclamationmark.triangle.fill",
+                        actionTitle: "Retry",
+                        action: { Task { await viewModel.reload() } }
+                    )
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
             default:
                 petList
             }
         }
         .background(Color("NeutralBackground").ignoresSafeArea())
-        .navigationTitle("My Pets")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -74,96 +84,65 @@ struct PetListView: View {
 
     @ViewBuilder
     private var petList: some View {
-        if viewModel.pets.isEmpty {
-            EmptyStateView(
-                title: "No pets yet",
-                message: "Add your first pet to generate a care card and QR code.",
-                actionTitle: "Add pet",
-                action: { viewModel.addPetTapped() }
-            )
-            .padding(.top, 80)
-        } else {
-            List {
-                ForEach(viewModel.pets) { pet in
-                    if let detailVM = PetDetailViewModel(petID: pet.id, listViewModel: viewModel) {
-                        Button {
-                            selectedPet = pet
-                        } label: {
-                            PetRowView(
-                                pet: pet,
-                                showsChevron: false,
-                                editAction: { viewModel.edit(pet: pet) },
-                                deleteAction: { viewModel.delete(pet: pet) }
-                            )
-                            .listRowInsets(EdgeInsets())
-                        }
-                        .buttonStyle(.plain)
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color("NeutralBackground"))
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                viewModel.delete(pet: pet)
+        VStack(alignment: .leading, spacing: 16) {
+            header
+
+            if viewModel.pets.isEmpty {
+                EmptyStateView(
+                    title: "No pets yet",
+                    message: "Add your first pet to generate a care card and QR code.",
+                    iconName: "pawprint.fill",
+                    actionTitle: "Add a pet",
+                    action: { viewModel.addPetTapped() }
+                )
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            } else {
+                List {
+                    ForEach(viewModel.pets) { pet in
+                        if PetDetailViewModel(petID: pet.id, listViewModel: viewModel) != nil {
+                            Button {
+                                selectedPet = pet
                             } label: {
-                                Label("Delete", systemImage: "trash")
+                                PetRowView(
+                                    pet: pet,
+                                    editAction: { viewModel.edit(pet: pet) },
+                                    deleteAction: { viewModel.delete(pet: pet) }
+                                )
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 4)
+                                .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                             }
-                            .tint(Color("BrandDanger"))
+                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color("NeutralBackground"))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    viewModel.delete(pet: pet)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                .tint(Color("BrandDanger"))
+                            }
                         }
                     }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .background(Color("NeutralBackground"))
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(Color("NeutralBackground"))
         }
+        .padding(.top, 12)
     }
 
-}
-
-private struct PetRowView: View {
-    let pet: Pet
-    let showsChevron: Bool
-    let editAction: () -> Void
-    let deleteAction: () -> Void
-
-    var body: some View {
-        GlassCard {
-            HStack(spacing: 12) {
-                PetAvatarView(size: 56)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(pet.name)
-                        .font(.headline)
-
-                    Text(pet.ageDescription)
-                        .font(.subheadline)
-                        .foregroundStyle(Color("NeutralTextSecondary"))
-
-                    if pet.medicationInfo?.hasMeds == true {
-                        TagPill(text: "Has meds")
-                    } else {
-                        TagPill(text: "No meds")
-                    }
-                }
-
-                Spacer()
-
-                if showsChevron {
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(Color("NeutralTextSecondary"))
-                }
-            }
-        }
-        .contextMenu {
-            Button("Edit", systemImage: "pencil", action: editAction)
-            Button(role: .destructive) {
-                deleteAction()
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-            .tint(Color("BrandDanger"))
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(pet.name), \(pet.ageDescription). \(pet.medicationInfo?.hasMeds == true ? "Has medications" : "No medications").")
+    private var header: some View {
+        Text("My Pets")
+            .font(.largeTitle)
+            .bold()
+            .foregroundStyle(Color("NeutralText"))
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
     }
 }
 

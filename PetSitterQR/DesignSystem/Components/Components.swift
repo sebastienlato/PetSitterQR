@@ -82,6 +82,7 @@ struct SectionHeader: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.headline)
+                .foregroundStyle(Color("NeutralText"))
 
             if let subtitle {
                 Text(subtitle)
@@ -95,6 +96,18 @@ struct SectionHeader: View {
 
 struct TagPill: View {
     let text: String
+    let background: Color
+    let foreground: Color
+
+    init(
+        text: String,
+        background: Color = Color("NeutralBackground"),
+        foreground: Color = Color("NeutralTextSecondary")
+    ) {
+        self.text = text
+        self.background = background
+        self.foreground = foreground
+    }
 
     var body: some View {
         Text(text)
@@ -103,32 +116,40 @@ struct TagPill: View {
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(Color("NeutralBackground"))
+                    .fill(background)
             )
-            .foregroundStyle(Color("NeutralTextSecondary"))
+            .foregroundStyle(foreground)
     }
 }
 
 struct EmptyStateView: View {
     let title: String
     let message: String
+    let iconName: String?
     let actionTitle: String?
     let action: (() -> Void)?
 
     init(
         title: String,
         message: String,
+        iconName: String? = nil,
         actionTitle: String? = nil,
         action: (() -> Void)? = nil
     ) {
         self.title = title
         self.message = message
+        self.iconName = iconName
         self.actionTitle = actionTitle
         self.action = action
     }
 
     var body: some View {
         VStack(spacing: 12) {
+            if let iconName {
+                Image(systemName: iconName)
+                    .font(.largeTitle)
+                    .foregroundStyle(Color("BrandPrimary"))
+            }
             Text(title)
                 .font(.title3)
                 .bold()

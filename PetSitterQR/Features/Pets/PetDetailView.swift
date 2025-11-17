@@ -17,34 +17,33 @@ struct PetDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                headerSection
+                heroSection
 
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 8) {
-                        SectionHeader("Feeding instructions", subtitle: viewModel.feedingSchedule)
-                        Text(viewModel.pet.feedingInfo.summary)
-                            .foregroundStyle(Color("NeutralText"))
-                    }
+                infoCard(
+                    iconName: "fork.knife",
+                    title: "Feeding",
+                    subtitle: viewModel.feedingSchedule
+                ) {
+                    Text(viewModel.pet.feedingInfo.summary)
+                        .foregroundStyle(Color("NeutralTextSecondary"))
+                        .multilineTextAlignment(.leading)
                 }
 
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 8) {
-                        SectionHeader("Medications")
-                        medicationsContent
-                    }
+                infoCard(iconName: "pills", title: "Medications") {
+                    medicationsContent
                 }
 
                 if let notes = viewModel.extraNotes, !notes.isEmpty {
-                    GlassCard {
-                        VStack(alignment: .leading, spacing: 8) {
-                            SectionHeader("Extra care notes")
-                            Text(notes)
-                                .foregroundStyle(Color("NeutralTextSecondary"))
-                        }
+                    infoCard(iconName: "note.text", title: "Extra care") {
+                        Text(notes)
+                            .foregroundStyle(Color("NeutralTextSecondary"))
+                            .multilineTextAlignment(.leading)
                     }
                 }
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
         }
         .background(Color("NeutralBackground").ignoresSafeArea())
         .navigationTitle(viewModel.pet.name)
@@ -55,6 +54,7 @@ struct PetDetailView: View {
                 } label: {
                     Image(systemName: "qrcode")
                 }
+                .tint(Color("BrandPrimary"))
                 .accessibilityLabel("Share care card")
 
                 Button("Edit") {
@@ -65,38 +65,37 @@ struct PetDetailView: View {
         }
     }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 16) {
-                PetAvatarView(size: 96)
+    private var heroSection: some View {
+        GlassCard(background: Color("NeutralCard")) {
+            VStack(alignment: .center, spacing: 12) {
+                PetAvatarView(size: 80)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(viewModel.pet.name)
-                        .font(.largeTitle)
-                        .bold()
-                        .foregroundStyle(Color("NeutralText"))
+                Text(viewModel.pet.name)
+                    .font(.title)
+                    .bold()
+                    .foregroundStyle(Color("NeutralText"))
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-                    Text(viewModel.pet.ageDescription)
-                        .font(.title3)
-                        .foregroundStyle(Color("NeutralTextSecondary"))
+                Text(viewModel.pet.ageDescription)
+                    .font(.subheadline)
+                    .foregroundStyle(Color("NeutralTextSecondary"))
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-                    if viewModel.hasMedications {
-                        TagPill(text: "Needs meds")
-                    } else {
-                        TagPill(text: "No meds")
-                    }
-                }
+                medsTag
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
     private var medicationsContent: some View {
         Group {
             if viewModel.hasMedications {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     if let description = viewModel.medicationDescription {
                         Text(description)
-                            .foregroundStyle(Color("NeutralText"))
+                            .foregroundStyle(medicationEmphasisColor(for: description))
+                            .multilineTextAlignment(.leading)
                     }
                     if let dosage = viewModel.medicationDosage {
                         Text("Dosage: \(dosage)")
@@ -107,6 +106,60 @@ struct PetDetailView: View {
                 Text("No medications required.")
                     .foregroundStyle(Color("NeutralTextSecondary"))
             }
+        }
+    }
+
+    private var medsTag: some View {
+        if viewModel.hasMedications {
+            TagPill(
+                text: "Has meds",
+                background: Color("BrandPrimary"),
+                foreground: Color("NeutralCard")
+            )
+        } else {
+            TagPill(
+                text: "No meds",
+                background: Color("NeutralTextSecondary").opacity(0.12),
+                foreground: Color("NeutralTextSecondary")
+            )
+        }
+    }
+
+    private func medicationEmphasisColor(for text: String) -> Color {
+        let lowercased = text.lowercased()
+        if lowercased.contains("emergency") || lowercased.contains("alert") || lowercased.contains("critical") {
+            return Color("BrandDanger")
+        }
+        if lowercased.contains("allerg") {
+            return Color("BrandWarning")
+        }
+        return Color("NeutralText")
+    }
+
+    @ViewBuilder
+    private func infoCard<Content: View>(
+        iconName: String,
+        title: String,
+        subtitle: String? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        GlassCard(background: Color("NeutralCard")) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: iconName)
+                    .font(.title3)
+                    .foregroundStyle(Color("BrandPrimary"))
+                    .padding(10)
+                    .background(
+                        Circle()
+                            .fill(Color("BrandPrimary").opacity(0.12))
+                    )
+
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionHeader(title, subtitle: subtitle)
+                    content()
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
