@@ -31,7 +31,11 @@ struct PetEditorView: View {
                         matching: .images,
                         photoLibrary: .shared()
                     ) {
-                        PetAvatarView(image: avatarImage.map { Image(uiImage: $0) }, size: 96)
+                        PetAvatarView(
+                            image: avatarImage.map { Image(uiImage: $0) },
+                            size: 96,
+                            showsEditBadge: true
+                        )
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     // NOTE: Ensure NSPhotoLibraryUsageDescription is set in Info settings.
@@ -74,6 +78,7 @@ struct PetEditorView: View {
         .navigationTitle(viewModel.isEditing ? "Edit Pet" : "Add Pet")
         .tint(Color("BrandPrimary"))
         .scrollContentBackground(.hidden)
+        .scrollIndicators(.hidden)
         .background(Color("NeutralBackground"))
         .onAppear(perform: loadExistingImage)
         .onChange(of: selectedPhotoItem) { _, newItem in

@@ -47,6 +47,7 @@ struct PetDetailView: View {
             .padding(.top, 16)
             .padding(.bottom, 24)
         }
+        .scrollIndicators(.hidden)
         .background(Color("NeutralBackground").ignoresSafeArea())
         .navigationTitle(viewModel.pet.name)
         .toolbar {
@@ -71,7 +72,16 @@ struct PetDetailView: View {
     private var heroSection: some View {
         GlassCard(background: Color("NeutralCard")) {
             VStack(alignment: .center, spacing: 12) {
-                PetAvatarView(image: avatarImage.map { Image(uiImage: $0) }, size: 80)
+                PetAvatarView(
+                    image: avatarImage.map { Image(uiImage: $0) },
+                    size: 80,
+                    showsEditBadge: true
+                )
+                .onTapGesture {
+                    viewModel.editPet()
+                }
+                .accessibilityLabel("Edit pet photo")
+                .accessibilityAddTraits(.isButton)
 
                 Button {
                     viewModel.editPet()

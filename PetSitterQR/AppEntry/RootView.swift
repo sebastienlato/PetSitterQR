@@ -41,6 +41,7 @@ struct RootView: View {
             }
             .tag(RootTab.scanner)
         }
+        .statusBarHidden(true)
     }
 }
 
@@ -76,6 +77,7 @@ private struct RootViewPreviewWrapper: View {
                 QRScannerView(viewModel: scannerViewModel)
             }
         }
+        .statusBarHidden(true)
     }
 }
 #endif

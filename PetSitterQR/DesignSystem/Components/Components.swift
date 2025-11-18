@@ -10,13 +10,33 @@ import SwiftUI
 struct PetAvatarView: View {
     let image: Image?
     let size: CGFloat
+    let showsEditBadge: Bool
 
-    init(image: Image? = nil, size: CGFloat = 64) {
+    init(image: Image? = nil, size: CGFloat = 64, showsEditBadge: Bool = false) {
         self.image = image
         self.size = size
+        self.showsEditBadge = showsEditBadge
     }
 
     var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            avatarCircle
+
+            if showsEditBadge {
+                Circle()
+                    .fill(Color("BrandPrimary"))
+                    .frame(width: size * 0.3, height: size * 0.3)
+                    .overlay(
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: size * 0.15, weight: .medium))
+                            .foregroundStyle(Color("NeutralCard"))
+                    )
+                    .offset(x: size * 0.05, y: size * 0.05)
+            }
+        }
+    }
+
+    private var avatarCircle: some View {
         (image ?? Image(systemName: "pawprint.fill"))
             .resizable()
             .scaledToFill()

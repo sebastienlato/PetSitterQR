@@ -122,7 +122,7 @@ final class PetListViewModel: ObservableObject {
     }
 
     func importFromQRCode(_ payload: PetQRCodePayload) async -> ImportResult {
-        if let existing = pets.first(where: {
+        if pets.contains(where: {
             $0.name == payload.name &&
             $0.ageDescription == payload.ageDescription &&
             $0.feedingInfo.summary == payload.feedingSummary &&
