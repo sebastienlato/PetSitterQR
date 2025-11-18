@@ -78,6 +78,7 @@ struct PetDetailView: View {
                     showsEditBadge: true
                 )
                 .onTapGesture {
+                    Haptics.light()
                     viewModel.editPet()
                 }
                 .accessibilityLabel("Edit pet photo")
