@@ -71,7 +71,7 @@ struct PetDetailView: View {
 
     private var heroSection: some View {
         GlassCard(background: Color("NeutralCard")) {
-            VStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .center, spacing: 10) {
                 PetAvatarView(
                     image: avatarImage.map { Image(uiImage: $0) },
                     size: 80,
@@ -82,19 +82,6 @@ struct PetDetailView: View {
                 }
                 .accessibilityLabel("Edit pet photo")
                 .accessibilityAddTraits(.isButton)
-
-                Button {
-                    viewModel.editPet()
-                } label: {
-                    TagPill(
-                        text: "Edit photo",
-                        iconName: "camera.fill",
-                        background: Color("BrandPrimary"),
-                        foreground: Color("NeutralCard")
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Edit pet photo")
 
                 Text(viewModel.pet.name)
                     .font(.title)
