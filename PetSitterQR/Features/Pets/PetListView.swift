@@ -25,17 +25,14 @@ struct PetListView: View {
         Group {
             switch viewModel.state {
             case .loading:
-                VStack(alignment: .leading, spacing: 24) {
-                    header
+                VStack(spacing: 24) {
                     ProgressView("Loading pets…")
                         .tint(Color("BrandPrimary"))
                         .foregroundStyle(Color("NeutralTextSecondary"))
-                        .padding(.top, 32)
                 }
-                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             case .failed(let message):
-                VStack(alignment: .leading, spacing: 24) {
-                    header
+                VStack {
                     EmptyStateView(
                         title: "Something went wrong",
                         message: message,
@@ -44,15 +41,16 @@ struct PetListView: View {
                         action: { Task { await viewModel.reload() } }
                     )
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             default:
                 petList
             }
         }
         .background(Color("NeutralBackground").ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("My Pets")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(Color.clear, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -84,9 +82,7 @@ struct PetListView: View {
 
     @ViewBuilder
     private var petList: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            header
-
+        List {
             if viewModel.pets.isEmpty {
                 EmptyStateView(
                     title: "No pets yet",
@@ -95,57 +91,48 @@ struct PetListView: View {
                     actionTitle: "Add a pet",
                     action: { viewModel.addPetTapped() }
                 )
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.vertical, 48)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color("NeutralBackground"))
             } else {
-                List {
-                    ForEach(viewModel.pets) { pet in
-                        if PetDetailViewModel(petID: pet.id, listViewModel: viewModel) != nil {
-                            Button {
-                                selectedPet = pet
+                ForEach(viewModel.pets) { pet in
+                    if PetDetailViewModel(petID: pet.id, listViewModel: viewModel) != nil {
+                        Button {
+                            selectedPet = pet
+                        } label: {
+                            PetRowView(
+                                pet: pet,
+                                editAction: { viewModel.edit(pet: pet) },
+                                deleteAction: { viewModel.delete(pet: pet) }
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 4)
+                            .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color("NeutralBackground"))
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                viewModel.delete(pet: pet)
                             } label: {
-                                PetRowView(
-                                    pet: pet,
-                                    editAction: { viewModel.edit(pet: pet) },
-                                    deleteAction: { viewModel.delete(pet: pet) }
-                                )
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 4)
-                                .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                Label("Delete", systemImage: "trash")
                             }
-                            .buttonStyle(.plain)
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color("NeutralBackground"))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    viewModel.delete(pet: pet)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                .tint(Color("BrandDanger"))
-                            }
+                            .tint(Color("BrandDanger"))
                         }
                     }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .background(Color("NeutralBackground"))
             }
         }
-        .padding(.top, 12)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color("NeutralBackground"))
     }
 
-    private var header: some View {
-        Text("My Pets")
-            .font(.largeTitle)
-            .bold()
-            .foregroundStyle(Color("NeutralText"))
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-    }
 }
-
 #if DEBUG
 #Preview("Multiple pets") {
     NavigationStack {
