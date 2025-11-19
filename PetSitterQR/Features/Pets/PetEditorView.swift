@@ -37,9 +37,6 @@ struct PetEditorView: View {
                             showsEditBadge: true
                         )
                             .frame(maxWidth: .infinity, alignment: .center)
-                            .onTapGesture {
-                                Haptics.light()
-                            }
                     }
                     // NOTE: Ensure NSPhotoLibraryUsageDescription is set in Info settings.
 

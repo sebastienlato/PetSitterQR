@@ -66,7 +66,9 @@ struct PetDetailView: View {
                 .foregroundStyle(Color("BrandPrimary"))
             }
         }
-        .onAppear(perform: loadImage)
+        .onChange(of: viewModel.pet.imageIdentifier, initial: true) { _, _ in
+            loadImage()
+        }
     }
 
     private var heroSection: some View {
